@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Vocabulary Jeopardy</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons for UI styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Impact-like display font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Impact&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .jeopardy-font {
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .gold-text {
+            color: #facc15;
+            text-shadow: 2px 2px 0px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0px 3px 6px rgba(0,0,0,0.8);
+        }
+
+        .gold-gradient-bg {
+            background: linear-gradient(180deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
+        }
+
+        .jeopardy-card {
+            background: linear-gradient(180deg, #060ce9 0%, #0000b8 100%);
+            border: 2px solid #1e293b;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .jeopardy-card:hover:not(.answered) {
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.6);
+            border-color: #facc15;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .jeopardy-card.answered {
+            background: #090d2a;
+            opacity: 0.35;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+
+        .pulse-glow {
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between p-2 md:p-4 selection:bg-yellow-400 selection:text-slate-900">
+
+    <div id="app" class="max-w-7xl mx-auto w-full flex-grow flex flex-col">
+        <!-- Top Header Navigation -->
+        <header class="flex flex-wrap justify-between items-center bg-slate-900/90 backdrop-blur-md p-3 md:p-4 rounded-xl border border-slate-700/60 shadow-xl mb-4 gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg gold-gradient-bg flex items-center justify-center text-slate-950 text-xl font-black shadow-md">
+                    <i class="fa-solid fa-desktop"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider jeopardy-font gold-text">Computer Vocabulary Jeopardy</h1>
+                    <p class="text-xs text-slate-400">Interactive Game for Classroom Review</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <button id="soundToggleBtn" onclick="toggleSound()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition border border-slate-700">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-yellow-400"></i>
+                    <span id="soundLabel">Sound On</span>
+                </button>
+
+                <button onclick="openStudyGuideModal()" class="px-3 py-1.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-semibold flex items-center gap-2 transition border border-indigo-400/40">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Vocab Guide</span>
+                </button>
+
+                <button onclick="confirmResetGame()" class="px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-semibold flex items-center gap-2 transition border border-rose-400/40">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>New Game</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- SETUP SCREEN -->
+        <div id="setupScreen" class="flex-grow flex items-center justify-center p-4">
+            <div class="bg-slate-900/95 border-2 border-slate-700/80 rounded-2xl p-6 md:p-8 max-w-xl w-full shadow-2xl backdrop-blur-xl">
+                <div class="text-center mb-6">
+                    <span class="inline-block px-3 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full mb-2 border border-yellow-500/30">TEACHER SETUP</span>
+                    <h2 class="text-3xl font-extrabold text-white tracking-tight">Configure Your Game</h2>
+                    <p class="text-slate-400 text-sm mt-1">Select the number of competing teams and enter their names.</p>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Team Count Selection -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Number of Teams (2 - 5)</label>
+                        <div class="grid grid-cols-4 gap-2" id="teamCountSelector">
+                            <button onclick="setTeamCount(2)" class="team-cnt-btn py-2.5 rounded-xl font-bold border border-slate-700 bg-slate-800 text-slate-300 hover:border-yellow-400 transition" data-cnt="2">2 Teams</button>
+                            <button onclick="setTeamCount(3)" class="team-cnt-btn py-2.5 rounded-xl font-bold border border-yellow-500 bg-yellow-500/20 text-yellow-300 transition" data-cnt="3">3 Teams</button>
+                            <button onclick="setTeamCount(4)" class="team-cnt-btn py-2.5 rounded-xl font-bold border border-slate-700 bg-slate-800 text-slate-300 hover:border-yellow-400 transition" data-cnt="4">4 Teams</button>
+                            <button onclick="setTeamCount(5)" class="team-cnt-btn py-2.5 rounded-xl font-bold border border-slate-700 bg-slate-800 text-slate-300 hover:border-yellow-400 transition" data-cnt="5">5 Teams</button>
+                        </div>
+                    </div>
+
+                    <!-- Team Names Input List -->
+                    <div id="teamInputsContainer" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Game Options -->
+                    <div class="pt-2 border-t border-slate-800 space-y-2">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="dailyDoubleToggle" checked class="w-4 h-4 accent-yellow-400 rounded focus:ring-yellow-400">
+                            <span class="text-sm font-medium text-slate-300">Enable Daily Double hidden bonus tile</span>
+                        </label>
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="timerToggle" checked class="w-4 h-4 accent-yellow-400 rounded focus:ring-yellow-400">
+                            <span class="text-sm font-medium text-slate-300">Enable 30-Second Question Timer</span>
+                        </label>
+                    </div>
+
+                    <!-- Start Button -->
+                    <button onclick="startGame()" class="w-full py-4 rounded-xl gold-gradient-bg text-slate-950 text-lg font-black tracking-wider uppercase shadow-lg hover:brightness-110 active:scale-[0.99] transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play"></i> Start Jeopardy Game
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN GAME BOARD SCREEN -->
+        <div id="gameScreen" class="hidden flex-grow flex flex-col gap-4">
+            <!-- Active Turn Banner -->
+            <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-md">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Current Selection:</span>
+                    <div id="activeTeamBadge" class="px-3 py-1 rounded-full text-xs font-black bg-yellow-400 text-slate-950 flex items-center gap-2 shadow">
+                        <i class="fa-solid fa-crown"></i>
+                        <span id="activeTeamName">Team 1</span>
+                    </div>
+                </div>
+                <div class="text-xs text-slate-400 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-blue-400"></i>
+                    <span>Click any point tile to view the question. Teacher controls scoring in modal.</span>
+                </div>
+            </div>
+
+            <!-- Jeopardy Board Grid (5 Categories x 5 Rows) -->
+            <div id="jeopardyBoard" class="grid grid-cols-5 gap-2 md:gap-3 flex-grow">
+                <!-- Headers and cards dynamically populated by JS -->
+            </div>
+
+            <!-- SCOREBOARD AT BOTTOM -->
+            <div id="scoreboard" class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 md:p-4 shadow-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xs font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-yellow-400"></i> Team Scoreboard & Teacher Controls
+                    </h3>
+                    <span class="text-[11px] text-slate-400">Use <strong class="text-slate-200">+ / -</strong> to manually adjust team points anytime.</span>
+                </div>
+                <div id="teamScoresContainer" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUESTION / ANSWER MODAL -->
+    <div id="questionModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border-2 border-yellow-500/80 rounded-2xl max-w-3xl w-full p-6 md:p-8 shadow-2xl flex flex-col gap-6 relative overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div>
+                    <span id="modalCategory" class="text-xs font-bold text-yellow-400 uppercase tracking-widest block">CATEGORY</span>
+                    <span id="modalPoints" class="text-2xl font-black text-white jeopardy-font">$200</span>
+                </div>
+                <!-- Countdown Timer Display -->
+                <div id="timerContainer" class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <i class="fa-solid fa-clock text-yellow-400 text-sm"></i>
+                    <span id="timerText" class="font-mono text-lg font-bold text-slate-200">30s</span>
+                </div>
+            </div>
+
+            <!-- Daily Double Banner (if applicable) -->
+            <div id="dailyDoubleBanner" class="hidden gold-gradient-bg text-slate-950 py-2 px-4 rounded-xl text-center font-black jeopardy-font text-xl shadow-lg animate-bounce">
+                <i class="fa-solid fa-star"></i> DAILY DOUBLE! <i class="fa-solid fa-star"></i>
+            </div>
+
+            <!-- Question Body -->
+            <div class="py-4 text-center min-h-[140px] flex flex-col items-center justify-center">
+                <p id="modalQuestion" class="text-xl md:text-2xl font-bold text-slate-100 leading-relaxed max-w-2xl">
+                    Loading question...
+                </p>
+
+                <!-- Revealed Answer Box -->
+                <div id="modalAnswerBox" class="hidden mt-6 p-4 rounded-xl bg-indigo-950/80 border border-indigo-500/50 text-indigo-100 w-full animate-fadeIn">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-indigo-400 block mb-1">Correct Answer:</span>
+                    <p id="modalAnswer" class="text-lg font-bold text-yellow-300"></p>
+                </div>
+            </div>
+
+            <!-- TEACHER CONTROL ACTION PANEL -->
+            <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-chalkboard-user text-yellow-400"></i> Teacher Grading Controls
+                    </span>
+                    <button id="revealAnswerBtn" onclick="revealAnswer()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2">
+                        <i class="fa-solid fa-eye"></i> Reveal Answer
+                    </button>
+                </div>
+
+                <!-- Award Points To Teams -->
+                <div>
+                    <span class="text-xs text-slate-400 font-semibold block mb-2">Select team responding:</span>
+                    <div id="modalTeamScoringGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Direct Action Buttons -->
+                <div class="flex gap-2 pt-1">
+                    <button onclick="handleNoPointsClose()" class="flex-1 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">
+                        No Points / Skip Question
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VOCABULARY STUDY GUIDE REFERENCE MODAL -->
+    <div id="studyGuideModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-book text-yellow-400 text-xl"></i>
+                    <h3 class="text-xl font-bold text-white">Computer Vocabulary Study Guide Reference</h3>
+                </div>
+                <button onclick="closeStudyGuideModal()" class="text-slate-400 hover:text-white text-xl p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="flex-grow overflow-y-auto custom-scrollbar space-y-4 pr-2">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="text-yellow-400 font-bold text-sm uppercase mb-2">Core Hardware Components</h4>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li><strong class="text-white">Keyboard:</strong> Device that enters data with letters, numbers, symbols, and special function keys.</li>
+                        <li><strong class="text-white">Monitor:</strong> An electronic visual display for computers.</li>
+                        <li><strong class="text-white">Tower:</strong> A desktop system unit housing all of the computer's components.</li>
+                        <li><strong class="text-white">Mouse:</strong> A hand-operated electronic device that controls the coordinates of a cursor on your computer screen.</li>
+                        <li><strong class="text-white">Track Pad:</strong> The small area at the bottom of a laptop that allows you to move, select, and change items using your finger.</li>
+                        <li><strong class="text-white">Circuit Board:</strong> An insulated board on which microchips and other components are mounted or etched.</li>
+                        <li><strong class="text-white">Processor (CPU):</strong> Central Processing Unit; interprets and carries out basic instructions.</li>
+                        <li><strong class="text-white">RAM:</strong> Random Access Memory; temporary storage for active programs, erased when power is off.</li>
+                        <li><strong class="text-white">Microchip:</strong> Miniature electronic circuit used to control computers; also called microprocessor.</li>
+                        <li><strong class="text-white">Hardware:</strong> The physical parts of the computer you can actually touch.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="text-yellow-400 font-bold text-sm uppercase mb-2">Input, Output, Ports & Storage</h4>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li><strong class="text-white">Input:</strong> Entering data into the computer. (e.g. Keyboard, mouse, trackpad, microphone, webcam, scanner).</li>
+                        <li><strong class="text-white">Output:</strong> Data the computer gives to you. (e.g. Monitor, printer, speakers, headphones).</li>
+                        <li><strong class="text-white">Ports:</strong> Connects external devices to system unit. Color-coded. (e.g. USB, HDMI, Ethernet, VGA, DVI, eSATA, Aux jack, S-video, DisplayPort, Power port).</li>
+                        <li><strong class="text-white">Storage:</strong> Flash drive, SD card, CD/DVD, floppy disk, external/internal hard drive, Cloud, Google Drive, Amazon Photos, Pogo Plug.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="text-yellow-400 font-bold text-sm uppercase mb-2">Software & Security</h4>
+                    <ul class="space-y-2 text-xs text-slate-300 leading-relaxed">
+                        <li><strong class="text-white">Software:</strong> Applications that tell hardware what to do and how to do it (programs, games).</li>
+                        <li><strong class="text-white">Operating System (OS):</strong> Most important program that lets hardware and software work together.</li>
+                        <li><strong class="text-white">Virus:</strong> Malicious program written to alter operation, damage devices, or steal data.</li>
+                        <li><strong class="text-white">Antivirus:</strong> Software used to prevent, scan, detect, and delete malicious code.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800 text-right">
+                <button onclick="closeStudyGuideModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold">Close Guide</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME OVER / WINNER CELEBRATION MODAL -->
+    <div id="winnerModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border-2 border-yellow-400 rounded-2xl max-w-lg w-full p-8 text-center shadow-2xl relative overflow-hidden">
+            <div class="text-6xl text-yellow-400 mb-4 animate-bounce">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 class="text-3xl font-black text-white jeopardy-font gold-text mb-2">Game Over!</h2>
+            <p class="text-slate-400 text-sm mb-6">Congratulations to our Computer Science Jeopardy Champions!</p>
+
+            <div id="winnnerDetails" class="bg-slate-950/80 p-6 rounded-xl border border-slate-800 mb-6">
+                <!-- JS populated champion details -->
+            </div>
+
+            <button onclick="confirmResetGame()" class="w-full py-3.5 rounded-xl gold-gradient-bg text-slate-950 font-black tracking-wider uppercase shadow-lg hover:brightness-110 transition">
+                Play New Game
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* WEB AUDIO API SOUND SYNTHESIZER (No external audio files needed) */
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundLabel').innerText = soundEnabled ? 'Sound On' : 'Muted';
+            document.getElementById('soundIcon').className = soundEnabled ? 'fa-solid fa-volume-high text-yellow-400' : 'fa-solid fa-volume-xmark text-slate-500';
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+
+                if (type === 'select') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'correct') {
+                    const osc1 = ctx.createOscillator();
+                    const osc2 = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc1.type = 'triangle';
+                    osc2.type = 'sine';
+                    osc1.frequency.setValueAtTime(523.25, now); // C5
+                    osc1.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc1.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    osc1.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc1.connect(gain);
+                    osc2.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc1.start(now);
+                    osc2.start(now);
+                    osc1.stop(now + 0.5);
+                    osc2.stop(now + 0.5);
+                } else if (type === 'incorrect') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now); // A3
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.3); // A2
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'dailyDouble') {
+                    const notes = [440, 554.37, 659.25, 880];
+                    notes.forEach((freq, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(freq, now + (i * 0.1));
+                        gain.gain.setValueAtTime(0.1, now + (i * 0.1));
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.1) + 0.2);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + (i * 0.1));
+                        osc.stop(now + (i * 0.1) + 0.2);
+                    });
+                } else if (type === 'tick') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            } catch (e) {
+                console.warn("Audio playback not supported or blocked", e);
+            }
+        }
+
+        const JEOPARDY_DATA = [
+            {
+                category: "Input & Output",
+                questions: [
+                    {
+                        points: 200,
+                        question: "This term describes entering data into a computer system.",
+                        answer: "What is Input?"
+                    },
+                    {
+                        points: 400,
+                        question: "Monitors, printers, speakers, and headphones are all examples of this type of computer hardware.",
+                        answer: "What is Output (or Output Devices)?"
+                    },
+                    {
+                        points: 600,
+                        question: "The small sensitive surface on a laptop that lets you control the cursor using your finger.",
+                        answer: "What is a Track Pad?"
+                    },
+                    {
+                        points: 800,
+                        question: "A computer device specifically used to capture video images in real time.",
+                        answer: "What is a Webcam?"
+                    },
+                    {
+                        points: 1000,
+                        question: "Name FOUR specific examples of Input devices listed in our study vocabulary.",
+                        answer: "What are Keyboard, Mouse, Trackpad, Microphone, Webcam, or Scanner?"
+                    }
+                ]
+            },
+            {
+                category: "Ports & Devices",
+                questions: [
+                    {
+                        points: 200,
+                        question: "These openings connect external devices to the system unit and are often color-coded.",
+                        answer: "What are Ports?"
+                    },
+                    {
+                        points: 400,
+                        question: "Any device not housed inside the system unit that provides input, output, or storage via cables or wireless.",
+                        answer: "What are External Devices?"
+                    },
+                    {
+                        points: 600,
+                        question: "Name THREE common computer port types from our vocabulary sheet (e.g. USB, HDMI...).",
+                        answer: "What are USB, HDMI, Ethernet, VGA, DVI, eSATA, Aux Jack, DisplayPort, or Power Port?"
+                    },
+                    {
+                        points: 800,
+                        question: "A modern video and audio port commonly used to connect computers to high-definition monitors and TVs.",
+                        answer: "What is HDMI (or DisplayPort)?"
+                    },
+                    {
+                        points: 1000,
+                        question: "Name FOUR external devices that connect to a computer system unit.",
+                        answer: "What are Printer, Keyboard, Mouse, Microphone, Speakers, Webcam, Flash Drive, or External Hard Drive?"
+                    }
+                ]
+            },
+            {
+                category: "Inside the Tower",
+                questions: [
+                    {
+                        points: 200,
+                        question: "The physical parts of the computer that you can actually see and touch.",
+                        answer: "What is Hardware?"
+                    },
+                    {
+                        points: 400,
+                        question: "The insulated board on which microchips, CPU, and other main electronic components are mounted.",
+                        answer: "What is a Circuit Board?"
+                    },
+                    {
+                        points: 600,
+                        question: "Known as the CPU, this crucial component interprets and carries out the basic operating instructions.",
+                        answer: "What is the Processor (Central Processing Unit)?"
+                    },
+                    {
+                        points: 800,
+                        question: "Miniature electronic circuits used to control computers; computers contain many of these etched on circuit boards.",
+                        answer: "What are Microchips (or Microprocessors)?"
+                    },
+                    {
+                        points: 1000,
+                        question: "Memory available on a computer for active programs that is automatically erased when power is turned off.",
+                        answer: "What is RAM (Random Access Memory)?"
+                    }
+                ]
+            },
+            {
+                category: "Storage & Cloud",
+                questions: [
+                    {
+                        points: 200,
+                        question: "Name TWO portable physical storage devices mentioned in our vocabulary list.",
+                        answer: "What are Flash Drives, SD Cards, CDs/DVDs, or Floppy Disks?"
+                    },
+                    {
+                        points: 400,
+                        question: "Online services like Google Drive or Amazon Photos store data remotely using this system.",
+                        answer: "What is Cloud Storage (or The Cloud)?"
+                    },
+                    {
+                        points: 600,
+                        question: "Unlike temporary RAM, this main storage component inside the computer holds programs even when turned off.",
+                        answer: "What is an Internal Hard Drive?"
+                    },
+                    {
+                        points: 800,
+                        question: "This tall desktop system unit housing houses all the computer's core internal components.",
+                        answer: "What is the Tower?"
+                    },
+                    {
+                        points: 1000,
+                        question: "Name FIVE distinct storage examples listed on your vocabulary review sheet.",
+                        answer: "What are Flash Drive, SD Card, CD/DVD, Floppy Disk, External Hard Drive, Internal Hard Drive, Cloud, Google Drive, Amazon Photos, or Pogo Plug?"
+                    }
+                ]
+            },
+            {
+                category: "Software & Security",
+                questions: [
+                    {
+                        points: 200,
+                        question: "Applications and programs that tell the computer hardware what to do and how to do it.",
+                        answer: "What is Software?"
+                    },
+                    {
+                        points: 400,
+                        question: "The single most important program running on a computer that allows hardware and software to work together.",
+                        answer: "What is the Operating System (OS)?"
+                    },
+                    {
+                        points: 600,
+                        question: "Malicious code or programs written to alter operations, damage devices, or steal data.",
+                        answer: "What is a Virus?"
+                    },
+                    {
+                        points: 800,
+                        question: "Software designed to prevent, scan, detect, and delete malicious code, often running in the background.",
+                        answer: "What is Antivirus software?"
+                    },
+                    {
+                        points: 1000,
+                        question: "Explain the main difference between Hardware and Software and give one example of each.",
+                        answer: "What is: Hardware is physical/touchable (e.g. Keyboard), while Software is digital instructions/programs (e.g. Operating System)?"
+                    }
+                ]
+            }
+        ];
+
+        let state = {
+            teamCount: 3,
+            teams: [],
+            activeTeamIndex: 0,
+            answeredQuestions: {}, // key: "catIdx-qIdx", value: true
+            currentQuestion: null, // { catIdx, qIdx, data }
+            dailyDoubleKey: null,
+            dailyDoubleEnabled: true,
+            timerEnabled: true,
+            timerInterval: null,
+            timeLeft: 30
+        };
+
+        // Initialize App on DOM Load
+        window.onload = function() {
+            renderTeamInputs();
+        };
+
+        function setTeamCount(cnt) {
+            state.teamCount = cnt;
+            document.querySelectorAll('.team-cnt-btn').forEach(btn => {
+                const isSelected = parseInt(btn.dataset.cnt) === cnt;
+                btn.className = isSelected 
+                    ? "team-cnt-btn py-2.5 rounded-xl font-bold border border-yellow-500 bg-yellow-500/20 text-yellow-300 transition shadow" 
+                    : "team-cnt-btn py-2.5 rounded-xl font-bold border border-slate-700 bg-slate-800 text-slate-300 hover:border-yellow-400 transition";
+            });
+            renderTeamInputs();
+        }
+
+        function renderTeamInputs() {
+            const container = document.getElementById('teamInputsContainer');
+            container.innerHTML = '';
+            
+            const defaultColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
+
+            for (let i = 0; i < state.teamCount; i++) {
+                const teamNum = i + 1;
+                const defaultName = `Team ${teamNum}`;
+                
+                const div = document.createElement('div');
+                div.className = "flex items-center space-x-3";
+                div.innerHTML = `
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white shadow" style="background-color: ${defaultColors[i]}">${teamNum}</span>
+                    <input type="text" id="teamInput_${i}" value="${defaultName}" placeholder="Enter Team ${teamNum} Name" 
+                        class="flex-grow bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-yellow-400 font-semibold">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function startGame() {
+            getAudioContext(); // Initialize audio context on user click
+            
+            // Collect team names
+            state.teams = [];
+            for (let i = 0; i < state.teamCount; i++) {
+                const val = document.getElementById(`teamInput_${i}`).value.trim();
+                state.teams.push({
+                    name: val !== '' ? val : `Team ${i + 1}`,
+                    score: 0
+                });
+            }
+
+            state.dailyDoubleEnabled = document.getElementById('dailyDoubleToggle').checked;
+            state.timerEnabled = document.getElementById('timerToggle').checked;
+            state.answeredQuestions = {};
+            state.activeTeamIndex = 0;
+
+            // Pick a random Daily Double tile
+            if (state.dailyDoubleEnabled) {
+                const randomCat = Math.floor(Math.random() * JEOPARDY_DATA.length);
+                const randomQ = Math.floor(Math.random() * 5);
+                state.dailyDoubleKey = `${randomCat}-${randomQ}`;
+            } else {
+                state.dailyDoubleKey = null;
+            }
+
+            // Hide setup, show game board
+            document.getElementById('setupScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+
+            renderBoard();
+            renderScoreboard();
+            updateActiveTeamDisplay();
+            playSound('select');
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('jeopardyBoard');
+            board.innerHTML = '';
+
+            // Render 5 Category Headers
+            JEOPARDY_DATA.forEach((catObj) => {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = "bg-slate-900 border-2 border-slate-700/80 rounded-xl p-2 md:p-3 text-center flex items-center justify-center shadow-md min-h-[60px]";
+                headerDiv.innerHTML = `<h3 class="jeopardy-font text-xs sm:text-sm md:text-base font-black gold-text leading-tight">${catObj.category}</h3>`;
+                board.appendChild(headerDiv);
+            });
+
+            // Render Grid Rows ($200 to $1000)
+            for (let qIdx = 0; qIdx < 5; qIdx++) {
+                for (let catIdx = 0; catIdx < JEOPARDY_DATA.length; catIdx++) {
+                    const key = `${catIdx}-${qIdx}`;
+                    const qData = JEOPARDY_DATA[catIdx].questions[qIdx];
+                    const isAnswered = state.answeredQuestions[key];
+
+                    const card = document.createElement('div');
+                    card.className = `jeopardy-card rounded-xl flex items-center justify-center p-3 text-center min-h-[70px] md:min-h-[90px] select-none ${isAnswered ? 'answered' : ''}`;
+                    
+                    if (isAnswered) {
+                        card.innerHTML = `<span class="text-slate-600 text-lg font-bold"><i class="fa-solid fa-check"></i></span>`;
+                    } else {
+                        card.innerHTML = `<span class="jeopardy-font gold-text text-xl md:text-3xl font-black">$${qData.points}</span>`;
+                        card.onclick = () => openQuestion(catIdx, qIdx);
+                    }
+
+                    board.appendChild(card);
+                }
+            }
+        }
+
+        function updateActiveTeamDisplay() {
+            const activeTeam = state.teams[state.activeTeamIndex];
+            document.getElementById('activeTeamName').innerText = activeTeam.name;
+        }
+
+        function openQuestion(catIdx, qIdx) {
+            const key = `${catIdx}-${qIdx}`;
+            if (state.answeredQuestions[key]) return;
+
+            const qData = JEOPARDY_DATA[catIdx].questions[qIdx];
+            const categoryName = JEOPARDY_DATA[catIdx].category;
+
+            state.currentQuestion = {
+                key: key,
+                catIdx: catIdx,
+                qIdx: qIdx,
+                points: qData.points,
+                question: qData.question,
+                answer: qData.answer,
+                isDailyDouble: (state.dailyDoubleKey === key)
+            };
+
+            // Setup Modal UI
+            document.getElementById('modalCategory').innerText = categoryName;
+            document.getElementById('modalPoints').innerText = `$${qData.points}`;
+            document.getElementById('modalQuestion').innerText = qData.question;
+            document.getElementById('modalAnswer').innerText = qData.answer;
+            document.getElementById('modalAnswerBox').classList.add('hidden');
+            document.getElementById('revealAnswerBtn').classList.remove('hidden');
+
+            const ddBanner = document.getElementById('dailyDoubleBanner');
+            if (state.currentQuestion.isDailyDouble) {
+                ddBanner.classList.remove('hidden');
+                playSound('dailyDouble');
+            } else {
+                ddBanner.classList.add('hidden');
+                playSound('select');
+            }
+
+            renderModalScoringButtons();
+
+            // Setup Timer
+            clearInterval(state.timerInterval);
+            const timerContainer = document.getElementById('timerContainer');
+            if (state.timerEnabled) {
+                timerContainer.classList.remove('hidden');
+                state.timeLeft = 30;
+                document.getElementById('timerText').innerText = `${state.timeLeft}s`;
+                state.timerInterval = setInterval(() => {
+                    state.timeLeft--;
+                    document.getElementById('timerText').innerText = `${state.timeLeft}s`;
+                    if (state.timeLeft <= 5 && state.timeLeft > 0) {
+                        playSound('tick');
+                    }
+                    if (state.timeLeft <= 0) {
+                        clearInterval(state.timerInterval);
+                        playSound('incorrect');
+                        document.getElementById('timerText').innerText = "TIME'S UP!";
+                    }
+                }, 1000);
+            } else {
+                timerContainer.classList.add('hidden');
+            }
+
+            document.getElementById('questionModal').classList.remove('hidden');
+        }
+
+        function revealAnswer() {
+            document.getElementById('modalAnswerBox').classList.remove('hidden');
+            document.getElementById('revealAnswerBtn').classList.add('hidden');
+            playSound('select');
+        }
+
+        function renderModalScoringButtons() {
+            const container = document.getElementById('modalTeamScoringGrid');
+            container.innerHTML = '';
+
+            state.teams.forEach((team, idx) => {
+                const isTurn = (idx === state.activeTeamIndex);
+                
+                const box = document.createElement('div');
+                box.className = `p-2 rounded-xl border flex flex-col justify-between gap-1 text-center ${isTurn ? 'border-yellow-400 bg-yellow-400/10 pulse-glow' : 'border-slate-800 bg-slate-900'}`;
+                
+                box.innerHTML = `
+                    <span class="text-xs font-bold text-slate-200 truncate ${isTurn ? 'text-yellow-300' : ''}">${team.name}</span>
+                    <div class="flex gap-1 mt-1">
+                        <button onclick="awardPointsModal(${idx}, true)" class="flex-1 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Correct
+                        </button>
+                        <button onclick="awardPointsModal(${idx}, false)" class="flex-1 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold rounded transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-minus"></i> Wrong
+                        </button>
+                    </div>
+                `;
+                container.appendChild(box);
+            });
+        }
+
+        function awardPointsModal(teamIdx, isCorrect) {
+            clearInterval(state.timerInterval);
+            const points = state.currentQuestion.points;
+
+            if (isCorrect) {
+                state.teams[teamIdx].score += points;
+                playSound('correct');
+                // Set winning/responding team as current active team for next tile selection
+                state.activeTeamIndex = teamIdx;
+            } else {
+                state.teams[teamIdx].score -= points;
+                playSound('incorrect');
+            }
+
+            // Mark question as answered
+            state.answeredQuestions[state.currentQuestion.key] = true;
+
+            renderScoreboard();
+            updateActiveTeamDisplay();
+            closeQuestionModal();
+            checkGameOver();
+        }
+
+        function handleNoPointsClose() {
+            clearInterval(state.timerInterval);
+            state.answeredQuestions[state.currentQuestion.key] = true;
+            // Advance active team turn sequentially if skipped
+            state.activeTeamIndex = (state.activeTeamIndex + 1) % state.teams.length;
+            
+            renderScoreboard();
+            updateActiveTeamDisplay();
+            closeQuestionModal();
+            checkGameOver();
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('questionModal').classList.add('hidden');
+            renderBoard();
+        }
+
+        function renderScoreboard() {
+            const container = document.getElementById('teamScoresContainer');
+            container.innerHTML = '';
+
+            state.teams.forEach((team, idx) => {
+                const isActive = (idx === state.activeTeamIndex);
+                
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border flex flex-col justify-between transition ${isActive ? 'bg-slate-800 border-yellow-400 shadow-lg' : 'bg-slate-950 border-slate-800'}`;
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-1 mb-1">
+                        <span class="text-xs font-black uppercase tracking-wider ${isActive ? 'text-yellow-400' : 'text-slate-300'} truncate">${team.name}</span>
+                        ${isActive ? '<span class="text-[10px] bg-yellow-400 text-slate-950 px-1.5 py-0.5 rounded font-bold uppercase">Turn</span>' : ''}
+                    </div>
+                    <div class="text-xl md:text-2xl font-black jeopardy-font ${team.score >= 0 ? 'text-white' : 'text-rose-400'} my-1">
+                        $${team.score}
+                    </div>
+                    <div class="flex items-center gap-1 pt-1 border-t border-slate-800">
+                        <button onclick="manualScoreAdjust(${idx}, 100)" class="flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded text-xs transition">+100</button>
+                        <button onclick="manualScoreAdjust(${idx}, -100)" class="flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-rose-400 font-bold rounded text-xs transition">-100</button>
+                        <button onclick="selectActiveTurn(${idx})" class="py-0.5 px-2 bg-indigo-900/60 hover:bg-indigo-700 text-indigo-200 font-bold rounded text-[11px] transition" title="Set Active Turn">
+                            <i class="fa-solid fa-hand-pointer"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function manualScoreAdjust(teamIdx, amount) {
+            state.teams[teamIdx].score += amount;
+            renderScoreboard();
+            playSound('select');
+        }
+
+        function selectActiveTurn(teamIdx) {
+            state.activeTeamIndex = teamIdx;
+            updateActiveTeamDisplay();
+            renderScoreboard();
+            playSound('select');
+        }
+
+        function checkGameOver() {
+            const totalQuestions = JEOPARDY_DATA.length * 5;
+            const answeredCount = Object.keys(state.answeredQuestions).length;
+
+            if (answeredCount >= totalQuestions) {
+                setTimeout(showWinnerModal, 600);
+            }
+        }
+
+        function showWinnerModal() {
+            // Find highest score team
+            let sortedTeams = [...state.teams].sort((a, b) => b.score - a.score);
+            const winner = sortedTeams[0];
+
+            const details = document.getElementById('winnnerDetails');
+            details.innerHTML = `
+                <div class="text-xs uppercase font-bold text-slate-400 mb-1">First Place Champion</div>
+                <div class="text-3xl font-black text-yellow-300 jeopardy-font mb-2">${winner.name}</div>
+                <div class="text-2xl font-bold text-white mb-4">$${winner.score} Points</div>
+
+                <div class="border-t border-slate-800 pt-3 mt-3 text-left space-y-1">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Final Standings:</span>
+                    ${sortedTeams.map((t, i) => `
+                        <div class="flex justify-between text-xs text-slate-300 py-1 border-b border-slate-900">
+                            <span><strong>#${i + 1}</strong> ${t.name}</span>
+                            <span class="font-bold text-white">$${t.score}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            document.getElementById('winnerModal').classList.remove('hidden');
+            playSound('correct');
+        }
+
+        function openStudyGuideModal() {
+            document.getElementById('studyGuideModal').classList.remove('hidden');
+            playSound('select');
+        }
+
+        function closeStudyGuideModal() {
+            document.getElementById('studyGuideModal').classList.add('hidden');
+        }
+
+        function confirmResetGame() {
+            if (confirm("Are you sure you want to restart and set up a new game? Current scores will be reset.")) {
+                clearInterval(state.timerInterval);
+                document.getElementById('winnerModal').classList.add('hidden');
+                document.getElementById('gameScreen').classList.add('hidden');
+                document.getElementById('questionModal').classList.add('hidden');
+                document.getElementById('setupScreen').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
