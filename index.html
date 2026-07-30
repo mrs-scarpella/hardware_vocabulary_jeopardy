@@ -219,8 +219,33 @@
                 <i class="fa-solid fa-star"></i> DAILY DOUBLE! <i class="fa-solid fa-star"></i>
             </div>
 
+            <!-- DAILY DOUBLE WAGER SECTION -->
+            <div id="dailyDoubleWagerBox" class="hidden bg-slate-950/90 border border-yellow-500/50 p-4 rounded-xl text-center space-y-3 animate-fadeIn">
+                <span class="text-xs font-bold text-yellow-400 uppercase tracking-widest block">Daily Double Wager</span>
+                <p class="text-sm text-slate-300">
+                    <strong id="wagerTeamName" class="text-white">Team 1</strong>, enter your wager before revealing the question!
+                </p>
+                <p class="text-xs text-slate-400">
+                    Max Wager: <span id="wagerMaxLimit" class="text-yellow-300 font-bold">$1000</span>
+                    <span id="wagerRuleNote" class="text-slate-500 block text-[11px] mt-0.5">(Higher of current score or highest board tile value)</span>
+                </p>
+
+                <div class="flex flex-wrap justify-center gap-2 my-2" id="wagerPresetBtns">
+                    <!-- Presets added dynamically -->
+                </div>
+
+                <div class="flex items-center justify-center gap-2 max-w-xs mx-auto">
+                    <span class="text-lg font-bold text-yellow-400">$</span>
+                    <input type="number" id="wagerInput" min="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-center text-lg font-bold text-white focus:outline-none focus:border-yellow-400" placeholder="Enter wager">
+                </div>
+
+                <button onclick="confirmDailyDoubleWager()" class="w-full max-w-xs py-2.5 rounded-lg gold-gradient-bg text-slate-950 font-black text-sm uppercase tracking-wider shadow hover:brightness-110 transition">
+                    Lock In Wager & Reveal Question
+                </button>
+            </div>
+
             <!-- Question Body -->
-            <div class="py-4 text-center min-h-[140px] flex flex-col items-center justify-center">
+            <div id="questionBody" class="py-4 text-center min-h-[140px] flex flex-col items-center justify-center">
                 <p id="modalQuestion" class="text-xl md:text-2xl font-bold text-slate-100 leading-relaxed max-w-2xl">
                     Loading question...
                 </p>
@@ -233,7 +258,7 @@
             </div>
 
             <!-- TEACHER CONTROL ACTION PANEL -->
-            <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-4">
+            <div id="modalScoringPanel" class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fa-solid fa-chalkboard-user text-yellow-400"></i> Teacher Grading Controls
@@ -730,6 +755,7 @@
                 catIdx: catIdx,
                 qIdx: qIdx,
                 points: qData.points,
+                originalPoints: qData.points,
                 question: qData.question,
                 answer: qData.answer,
                 isDailyDouble: (state.dailyDoubleKey === key)
@@ -744,17 +770,95 @@
             document.getElementById('revealAnswerBtn').classList.remove('hidden');
 
             const ddBanner = document.getElementById('dailyDoubleBanner');
+            const ddWagerBox = document.getElementById('dailyDoubleWagerBox');
+            const questionBody = document.getElementById('questionBody');
+            const scoringPanel = document.getElementById('modalScoringPanel');
+            const timerContainer = document.getElementById('timerContainer');
+
+            // Reset Timer state
+            clearInterval(state.timerInterval);
+
             if (state.currentQuestion.isDailyDouble) {
                 ddBanner.classList.remove('hidden');
+                ddWagerBox.classList.remove('hidden');
+                questionBody.classList.add('hidden');
+                scoringPanel.classList.add('hidden');
+                timerContainer.classList.add('hidden');
+
+                // Calculate max allowed wager (higher of current score or max board tile $1000)
+                const activeTeam = state.teams[state.activeTeamIndex];
+                const maxWager = Math.max(activeTeam.score, 1000);
+
+                document.getElementById('wagerTeamName').innerText = activeTeam.name;
+                document.getElementById('wagerMaxLimit').innerText = `$${maxWager}`;
+                document.getElementById('wagerInput').value = Math.min(qData.points, maxWager);
+                document.getElementById('wagerInput').max = maxWager;
+
+                // Setup Presets
+                const presetContainer = document.getElementById('wagerPresetBtns');
+                presetContainer.innerHTML = '';
+                
+                const presets = [200, 500, 1000];
+                presets.forEach(val => {
+                    if (val <= maxWager) {
+                        const btn = document.createElement('button');
+                        btn.className = "px-3 py-1 bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-slate-700 rounded-lg text-xs font-bold transition";
+                        btn.innerText = `$${val}`;
+                        btn.onclick = () => { document.getElementById('wagerInput').value = val; };
+                        presetContainer.appendChild(btn);
+                    }
+                });
+
+                // True Daily Double preset button
+                const tddBtn = document.createElement('button');
+                tddBtn.className = "px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-yellow-400 border border-yellow-500/50 rounded-lg text-xs font-black transition";
+                tddBtn.innerText = `True Daily Double ($${maxWager})`;
+                tddBtn.onclick = () => { document.getElementById('wagerInput').value = maxWager; };
+                presetContainer.appendChild(tddBtn);
+
                 playSound('dailyDouble');
             } else {
                 ddBanner.classList.add('hidden');
+                ddWagerBox.classList.add('hidden');
+                questionBody.classList.remove('hidden');
+                scoringPanel.classList.remove('hidden');
                 playSound('select');
+
+                startQuestionTimer();
             }
 
             renderModalScoringButtons();
+            document.getElementById('questionModal').classList.remove('hidden');
+        }
 
-            // Setup Timer
+        function confirmDailyDoubleWager() {
+            const input = document.getElementById('wagerInput');
+            let wager = parseInt(input.value);
+
+            const activeTeam = state.teams[state.activeTeamIndex];
+            const maxWager = Math.max(activeTeam.score, 1000);
+            const minWager = 5;
+
+            if (isNaN(wager) || wager < minWager) {
+                wager = minWager;
+            } else if (wager > maxWager) {
+                wager = maxWager;
+            }
+
+            // Update question point value to custom wager
+            state.currentQuestion.points = wager;
+            document.getElementById('modalPoints').innerText = `$${wager} (WAGER)`;
+
+            // Reveal question and grading controls
+            document.getElementById('dailyDoubleWagerBox').classList.add('hidden');
+            document.getElementById('questionBody').classList.remove('hidden');
+            document.getElementById('modalScoringPanel').classList.remove('hidden');
+
+            playSound('select');
+            startQuestionTimer();
+        }
+
+        function startQuestionTimer() {
             clearInterval(state.timerInterval);
             const timerContainer = document.getElementById('timerContainer');
             if (state.timerEnabled) {
@@ -776,8 +880,6 @@
             } else {
                 timerContainer.classList.add('hidden');
             }
-
-            document.getElementById('questionModal').classList.remove('hidden');
         }
 
         function revealAnswer() {
